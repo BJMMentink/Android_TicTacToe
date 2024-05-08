@@ -18,10 +18,14 @@ public class Board {
     public static final String TAG = "Board";
     int viewWidth;
     int viewHeight;
+    private ComputerAI ai;
+    boolean isAI = true;
+    private Context context;
 
     public Board()
     {
         initCellValues();
+        ai = new ComputerAI();
     }
 
     public Board(int width)
@@ -29,6 +33,8 @@ public class Board {
         viewWidth = width / BOARDSIZE;
         viewHeight = viewWidth;
         SIZE = viewWidth - 3;
+        ai = new ComputerAI();
+        this.context = context;
         initCellValues();
     }
 
@@ -89,6 +95,7 @@ public class Board {
         return result;
     }
 
+
     public void Draw(Canvas canvas)
     {
         // Draw the board.
@@ -110,10 +117,13 @@ public class Board {
 
                 canvas.drawRect(cells[row][col], paint);
 
-                //if(cellValues[row][col] == "1")
-                //    drawTurn(canvas, cells[row][col], Color.RED);
-                //else if(cellValues[row][col] == "2")
-                //    drawTurn(canvas, cells[row][col], Color.BLUE);
+                if(cellValues[row][col] == "1")
+                    drawTurn(canvas, cells[row][col], 1);
+                else if(cellValues[row][col] == "2")
+                    drawTurn(canvas, cells[row][col], 2);
+
+                Log.d(TAG, "Draw: Failed " + cellValues[row][col]);
+
             }
         }
 
@@ -133,18 +143,65 @@ public class Board {
         Paint paint = new Paint();
 
         paint.setColor(Color.BLACK);
-        paint.setStrokeWidth(5);
+        paint.setStrokeWidth(7);
         paint.setStyle(Paint.Style.STROKE);
 
         int x = rect.centerX();
         int y = rect.centerY();
-        if (turn == 1){
-            canvas.drawLine(x - (rect.width() / 3), y - (rect.height() / 3), x + (rect.width() / 3),y + (rect.height() / 3), paint);
-            canvas.drawLine(x + (rect.width() / 3), y - (rect.height() / 3), x - (rect.width() / 3),y + (rect.height() / 3), paint);
-        }else {
-            canvas.drawCircle(x, y, SIZE * .35f, paint);
+        if (isAI){
+            if (turn == 1){
+                canvas.drawLine(x - (rect.width() / 3), y - (rect.height() / 3), x + (rect.width() / 3),y + (rect.height() / 3), paint);
+                canvas.drawLine(x + (rect.width() / 3), y - (rect.height() / 3), x - (rect.width() / 3),y + (rect.height() / 3), paint);
+            }
+            else {
+                canvas.drawCircle(x, y, SIZE * .35f, paint);
+            }
+        }
+        else {
+            if (turn == 1){
+                canvas.drawLine(x - (rect.width() / 3), y - (rect.height() / 3), x + (rect.width() / 3),y + (rect.height() / 3), paint);
+                canvas.drawLine(x + (rect.width() / 3), y - (rect.height() / 3), x - (rect.width() / 3),y + (rect.height() / 3), paint);
+            }
         }
 
+
     }
+    public Point makeAIMove(String turn) {
+        Point aiMove = ai.makeMove(cellValues, turn);
+        if (aiMove != null) {
+            cellValues[aiMove.x][aiMove.y] = turn;
+            return aiMove;
+        }
+        return null;
+    }
+    public String checkForWinner() {
+        for (int row = 0; row < BOARDSIZE; row++) {
+            if (cellValues[row][0].equals(cellValues[row][1]) &&
+                    cellValues[row][1].equals(cellValues[row][2]) &&
+                    !cellValues[row][0].isEmpty()) {
+                return cellValues[row][0];
+            }
+        }
+        for (int col = 0; col < BOARDSIZE; col++) {
+            if (cellValues[0][col].equals(cellValues[1][col]) &&
+                    cellValues[1][col].equals(cellValues[2][col]) &&
+                    !cellValues[0][col].isEmpty()) {
+                return cellValues[0][col];
+            }
+        }
+        if (cellValues[0][0].equals(cellValues[1][1]) &&
+                cellValues[1][1].equals(cellValues[2][2]) &&
+                !cellValues[0][0].isEmpty()) {
+            return cellValues[0][0];
+        }
+        if (cellValues[0][2].equals(cellValues[1][1]) &&
+                cellValues[1][1].equals(cellValues[2][0]) &&
+                !cellValues[0][2].isEmpty()) {
+            return cellValues[0][2];
+        }
+
+        return null;
+    }
+
 }
 

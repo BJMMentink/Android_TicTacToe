@@ -37,6 +37,8 @@ public class MainActivity extends AppCompatActivity {
     int height;
     Board board;
     Point point  = new Point();
+    Boolean isWon = false;
+    boolean isAI = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -126,15 +128,18 @@ public class MainActivity extends AppCompatActivity {
 
                     point.x = (int)event.getX();
                     point.y = (int)event.getY();
-
-                    if(board.hitTest(point, turn, this.getContext())!= "-1")
-                    {
-                        Log.d(TAG, "onTouch: " + point.x + " " + point.y);
-                        turn = (turn.equals("1")) ? "2" : "1";
+                    if (!isWon) {
+                        if (board.hitTest(point, turn, getMainActivity()) != "-1") {
+                            Log.d(TAG, "onTouch: " + point.x + " " + point.y);
+                            turn = (turn.equals("1")) ? "2" : "1";
+                            String winner = board.checkForWinner();
+                            invalidate();
+                            if (winner != null) {
+                                handleWinner(winner);
+                            }
+                        }
+                        invalidate();
                     }
-
-                    invalidate();
-
                     break;
 
                 case MotionEvent.ACTION_MOVE:
@@ -145,9 +150,18 @@ public class MainActivity extends AppCompatActivity {
                 case MotionEvent.ACTION_UP:
                     Log.d(TAG, "onTouch: Up");
                     //hubConnection.send("SendMessage", "Ben:" + (x-offsetX) + ":" + (y - offsetY), "Ben");
+                    String winner = board.checkForWinner();
+                    if(isAI && winner == null){
+                        board.makeAIMove(turn);
+                        turn = (turn.equals("1")) ? "2" : "1";
+                        winner = board.checkForWinner();
+                        invalidate();
+                        if (winner != null) {
+                            handleWinner(winner);
+                        }
+                    }
                     isDragging = false;
             }
-
             return true;
         }
 
@@ -157,6 +171,10 @@ public class MainActivity extends AppCompatActivity {
             canvas.drawColor(Color.DKGRAY);
             board.Draw(canvas);
 
+        }
+        private void handleWinner(String winner) {
+            Log.d(TAG, "Winner is Player " + winner);
+            isWon = true;
         }
     }
 }
