@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
     Board board;
     Point point  = new Point();
     Boolean isWon = false;
-    boolean isAI = true;
+    boolean isAI = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
