@@ -2,4 +2,12 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="Red">#FF0000</color>
+    <color name="blue">#0000FF</color>
+    <color name="cornflowerblue">#6495ed</color>
+    <color name="lightblack">#181818</color>
+    <color name="darkGray">#555555</color>
+    <color name="Gray">#bebebe</color>
+    <color name="Lavender">#A651E2</color>
+    <color name="toolbar_background">#bebebe</color>
 </resources>

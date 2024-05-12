@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">TicTacToe</string>
+    <string name="_100">100%</string>
+    <string name="new_game">New Game</string>
+    <string name="delete">Delete</string>
+    <string name="gameTracker">https://fvtcdp.azurewebsites.net/api/game/</string>
+    <string name="gamePrefs">gamePreferences</string>
 </resources>

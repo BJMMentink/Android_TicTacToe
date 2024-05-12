@@ -1,8 +1,7 @@
 package edu.bjm.tictactoe;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -13,6 +12,9 @@ import android.util.Log;
 import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.FrameLayout;
+import android.widget.TextView;
+import android.widget.Button;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,6 +24,8 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.microsoft.signalr.HubConnection;
 import com.microsoft.signalr.HubConnectionBuilder;
+
+import java.util.Objects;
 
 /*
 https://snippets.cacher.io/snippet/875030698b29c73f56db
@@ -43,17 +47,44 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
-        setContentView(new DrawView(this));
-
-
-        //initSignalR();
+        initSignalR();
 
         getScreenDims();
+
         board = new Board(width);
+
+        Intent intent = getIntent();
+        if (intent != null) {
+            String gameName = intent.getStringExtra("gameName");
+            String opponentName = intent.getStringExtra("opponentName");
+
+            isAI = "Computer".equals(opponentName);
+
+            Log.d(TAG, "Game Name: " + gameName);
+            Log.d(TAG, "Opponent Name: " + opponentName);
+
+            TextView textPlayerName = findViewById(R.id.txtPlayerName);
+            textPlayerName.setText(gameName);
+        }
+
+        Button buttonSaveExit = findViewById(R.id.btnSaveExit);
+        buttonSaveExit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+            }
+        });
+        FrameLayout drawViewContainer = findViewById(R.id.drawView_container);
+        DrawView drawView = new DrawView(this);
+        drawViewContainer.addView(drawView);
 
         Log.d(TAG, "onCreate: End");
     }
+
+
+
 
     private void getScreenDims() {
         Display display = getWindowManager().getDefaultDisplay();
