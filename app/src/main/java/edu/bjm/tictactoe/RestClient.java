@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 public class RestClient {
@@ -133,12 +134,15 @@ public class RestClient {
             RequestQueue requestQueue = Volley.newRequestQueue(context);
             JSONObject object = new JSONObject();
 
-            object.put("id", game.getId());
+//            object.put("id", game.getId());
             object.put("connectionId", game.getConnectionId());
             object.put("player1", game.getPlayer1());
             object.put("player2", game.getPlayer2());
             object.put("winner", game.getWinner());
-            object.put("lastUpdateDate", game.getLastUpdateDate());
+            object.put("nextTurn", game.getNextTurn());
+            object.put("completed", game.isCompleted());
+            object.put("gameState", game.getGameState());
+//            object.put("lastUpdateDate", game.getLastUpdateDate());
 
             final String requestBody = object.toString();
 
@@ -199,9 +203,6 @@ public class RestClient {
                         @Override
                         public void onResponse(String response) {
                             Log.d(TAG, "onResponse: " + response);
-
-
-
                             try {
                                 JSONObject object = new JSONObject(response);
                                 Game game = new Game();
@@ -210,8 +211,11 @@ public class RestClient {
                                 game.setPlayer1(object.getString("player1"));
                                 game.setPlayer2(object.getString("player2"));
                                 game.setWinner(object.getString("winner"));
+                                game.setNextTurn(object.getString("nextTurn"));
+                                game.setCompleted(object.getBoolean("completed"));
+                                game.setGameState(object.getString("gameState"));
                                 String dateString = object.getString("lastUpdateDate");
-                                @SuppressLint("SimpleDateFormat") SimpleDateFormat dateFormat = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss"); // Change the pattern as per your date format
+                                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.getDefault());
                                 Date date = dateFormat.parse(dateString);
                                 game.setLastUpdateDate(date);
                                 games.add(game);

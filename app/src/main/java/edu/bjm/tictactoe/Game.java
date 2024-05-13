@@ -17,19 +17,23 @@ public class Game {
         this.id = "";
         this.connectionId = "";
         this.player1 = "";
-        this.player2 = "";
-        this.winner = "";
-        this.nextTurn = "";
+        this.player2 = null;
+        this.winner = null;
+        this.nextTurn = null;
+        this.completed = false;
         this.lastUpdateDate = new Date();
+        this.gameState = null;
     }
-    public Game(String id, String connectionId, String player1, String player2, String winner, String nextTurn, Date lastUpdateDate) {
+    public Game(String id, String connectionId, String player1, String player2, String winner, String nextTurn, boolean completed, Date lastUpdateDate, String gameState) {
         this.id = id;
         this.connectionId = connectionId;
         this.player1 = player1;
         this.player2 = player2;
         this.winner = winner;
         this.nextTurn = nextTurn;
+        this.completed = completed;
         this.lastUpdateDate = lastUpdateDate;
+        this.gameState = gameState;
     }
 
     public String getId() {

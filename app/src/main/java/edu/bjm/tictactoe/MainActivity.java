@@ -15,6 +15,7 @@ import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,6 +26,7 @@ import androidx.core.view.WindowInsetsCompat;
 import com.microsoft.signalr.HubConnection;
 import com.microsoft.signalr.HubConnectionBuilder;
 
+import java.util.ArrayList;
 import java.util.Objects;
 
 /*
@@ -37,9 +39,13 @@ public class MainActivity extends AppCompatActivity {
     public static final String TAG = "MainActivity";
     HubConnection hubConnection;
     String hubConnectionId;
+    Game game = new Game();
+    String opponentName;
     int width;
     int height;
+    int turnCount = 0;
     Board board;
+    Canvas MainCanvas;
     Point point  = new Point();
     Boolean isWon = false;
     boolean isAI = false;
@@ -48,26 +54,26 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        initSignalR();
-
-        getScreenDims();
-
-        board = new Board(width);
-
         Intent intent = getIntent();
         if (intent != null) {
-            String gameName = intent.getStringExtra("gameName");
-            String opponentName = intent.getStringExtra("opponentName");
+            if(intent.hasExtra("gameId")){
+                String gameId = intent.getStringExtra("gameId");
+                loadGame(gameId);
+                Log.d(TAG, "onCreate: " + game.toString());
 
-            isAI = "Computer".equals(opponentName);
-
-            Log.d(TAG, "Game Name: " + gameName);
-            Log.d(TAG, "Opponent Name: " + opponentName);
-
-            TextView textPlayerName = findViewById(R.id.txtPlayerName);
-            textPlayerName.setText(gameName);
+            }else{
+                String hubConnectionId = intent.getStringExtra("gameName");
+                opponentName = intent.getStringExtra("opponentName");
+                isAI = "Computer".equals(opponentName);
+                TextView textPlayerName = findViewById(R.id.txtPlayerName);
+                textPlayerName.setText(hubConnectionId);
+            }
         }
+        initSignalR();
+        getScreenDims();
+        board = new Board(width);
+
+
 
         Button buttonSaveExit = findViewById(R.id.btnSaveExit);
         buttonSaveExit.setOnClickListener(new View.OnClickListener() {
@@ -80,9 +86,42 @@ public class MainActivity extends AppCompatActivity {
         DrawView drawView = new DrawView(this);
         drawViewContainer.addView(drawView);
 
+
         Log.d(TAG, "onCreate: End");
     }
 
+
+    public void loadGame(String gameId) {
+        String url = getString(R.string.gameTracker) + gameId;
+        RestClient.execGetOneRequest(url, this, new VolleyCallback() {
+            @Override
+            public void onSuccess(ArrayList<Game> games) {
+                if (!games.isEmpty()) {
+                    Game tempgame = games.get(0);
+                    game = new Game(
+                            tempgame.getId(),
+                            tempgame.getConnectionId(),
+                            tempgame.getPlayer1(),
+                            tempgame.getPlayer2(),
+                            tempgame.getWinner(),
+                            tempgame.getNextTurn(),
+                            tempgame.isCompleted(),
+                            tempgame.getLastUpdateDate(),
+                            tempgame.getGameState()
+                    );
+                    hubConnectionId = game.getConnectionId();
+                    opponentName = game.getPlayer2();
+                    isAI = "Computer".equals(opponentName);
+                    TextView textPlayerName = findViewById(R.id.txtPlayerName);
+                    textPlayerName.setText(hubConnectionId);
+                    Log.d(TAG, "onSuccess: " + game.getConnectionId());
+
+                } else {
+                    Toast.makeText(MainActivity.this, "Game not found", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
 
 
 
@@ -146,66 +185,79 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public boolean onTouch(View v, MotionEvent event) {
-
             int x = (int) event.getX();
             int y = (int) event.getY();
 
-            Log.d(TAG, "onTouch: " + x + ":" + y);
-
-            switch(event.getAction())
-            {
+            switch(event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
-                    Log.d(TAG, "onTouch: Down");
-
-                    point.x = (int)event.getX();
-                    point.y = (int)event.getY();
                     if (!isWon) {
-                        if (board.hitTest(point, turn, getMainActivity()) != "-1") {
-                            Log.d(TAG, "onTouch: " + point.x + " " + point.y);
+                        Point touchPoint = new Point(x, y);
+                        String hitResult = board.hitTest(touchPoint, turn, getMainActivity());
+                        if (hitResult.equals("0")) {
                             turn = (turn.equals("1")) ? "2" : "1";
+                            turnCount++;
                             String winner = board.checkForWinner();
                             invalidate();
-                            if (winner != null) {
+                            if (winner != null || turnCount == 9) {
                                 handleWinner(winner);
                             }
                         }
-                        invalidate();
                     }
-                    break;
-
-                case MotionEvent.ACTION_MOVE:
-                    Log.d(TAG, "onTouch: Move");
-
                     break;
 
                 case MotionEvent.ACTION_UP:
-                    Log.d(TAG, "onTouch: Up");
-                    //hubConnection.send("SendMessage", "Ben:" + (x-offsetX) + ":" + (y - offsetY), "Ben");
-                    String winner = board.checkForWinner();
-                    if(isAI && winner == null){
-                        board.makeAIMove(turn);
-                        turn = (turn.equals("1")) ? "2" : "1";
-                        winner = board.checkForWinner();
-                        invalidate();
-                        if (winner != null) {
-                            handleWinner(winner);
+                    if (isAI && !isWon) {
+                        String winner = board.checkForWinner();
+                        if (winner == null) {
+                            Point aiMove = board.makeAIMove(turn);
+                            if (aiMove != null) {
+                                turn = (turn.equals("1")) ? "2" : "1";
+                                turnCount++;
+                                winner = board.checkForWinner();
+                                invalidate();
+                                if (winner != null) {
+                                    handleWinner(winner);
+                                }
+                            }
                         }
                     }
-                    isDragging = false;
+                    break;
             }
             return true;
         }
+
 
         @Override
         protected void onDraw(Canvas canvas)
         {
             canvas.drawColor(Color.DKGRAY);
+            MainCanvas = canvas;
             board.Draw(canvas);
+            if (game.getGameState() != null && turnCount == 0){
+                turnCount = board.drawGameState(canvas, game.getGameState());
+                Log.d(TAG, "Number of affected rows: " + turnCount);
+            }
 
         }
         private void handleWinner(String winner) {
-            Log.d(TAG, "Winner is Player " + winner);
-            isWon = true;
+            if (turnCount == 9){
+                Log.d(TAG, "No winner -- Draw");
+                isWon = true;
+            }else{
+                Log.d(TAG, "Winner is Player " + winner);
+                isWon = true;
+            }
+            game.setCompleted(true);
+            game.setWinner(winner);
+            RestClient.execPutRequest(game,getString(R.string.gameTracker) + game.getId(), MainActivity.this,  new VolleyCallback() {
+                @Override
+                public void onSuccess(ArrayList<Game> games) {
+                    Log.d(TAG, "New game created successfully");
+                    Intent intent = new Intent(MainActivity.this, GamesListActivity.class);
+                    startActivity(intent);
+                }
+            });
+
         }
     }
 }

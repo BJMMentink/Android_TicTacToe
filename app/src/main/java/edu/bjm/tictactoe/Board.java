@@ -68,32 +68,22 @@ public class Board {
 
 
 
-    public String hitTest(Point point, String turn, Context context)
-    {
+    public String hitTest(Point point, String turn, Context context) {
         String result = "-1";
-        // Player played.
 
-        for(int row = 0; row < cells[0].length; row++)
-        {
-            for(int col = 0; col < cells[1].length; col++)
-            {
-                Log.d(TAG, "hitTest: Hit this part");
-                if(cellValues[row][col] == "")
-                {
-                    Log.d(TAG, "hitTest: Hit next part " + cellValues[row][col].toString() + " " + point.x);
-                    if(cells[row][col].contains(point.x, point.y))
-                    {
-                        Log.d(TAG, "hitTest: ");
+        for(int row = 0; row < BOARDSIZE; row++) {
+            for(int col = 0; col < BOARDSIZE; col++) {
+                if(cellValues[row][col].isEmpty()) {
+                    if(cells[row][col].contains(point.x, point.y)) {
                         cellValues[row][col] = turn;
                         result = "0";
                     }
-
-
                 }
             }
         }
         return result;
     }
+
 
 
     public void Draw(Canvas canvas)
@@ -202,6 +192,43 @@ public class Board {
 
         return null;
     }
+    public int drawGameState(Canvas canvas, String gameState) {
+        String[] state = gameState.split("\\|");
+        int index = 0;
+        Paint paint = new Paint();
+        paint.setColor(Color.BLACK);
+        paint.setStrokeWidth(7);
+        paint.setStyle(Paint.Style.STROKE);
+
+        int turns = 0;
+
+        for (int row = 0; row < BOARDSIZE; row++) {
+            for (int col = 0; col < BOARDSIZE; col++) {
+                index++;
+
+                Rect rect = cells[row][col];
+                int x = rect.centerX();
+                int y = rect.centerY();
+
+                String cellValue = state[index - 1];
+
+                if (!cellValue.isEmpty()) {
+                    if (cellValue.equals("X")) {
+                        drawTurn(canvas, cells[row][col], 1);
+                        turns++;
+                    } else if (cellValue.equals("O")) {
+                        drawTurn(canvas, cells[row][col], 2);
+                        turns++;
+                    }
+
+                }
+            }
+        }
+
+        return turns;
+    }
+
+
 
 }
 

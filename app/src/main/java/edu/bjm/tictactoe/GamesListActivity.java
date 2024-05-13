@@ -26,6 +26,7 @@ import androidx.appcompat.widget.SwitchCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 public class GamesListActivity extends AppCompatActivity {
@@ -43,14 +44,12 @@ public class GamesListActivity extends AppCompatActivity {
             RecyclerView.ViewHolder viewHolder = (RecyclerView.ViewHolder) v.getTag();
             int position = viewHolder.getAdapterPosition();
             Game game = games.get(position);
-            Log.d(TAG, "onClick: " + game.getPlayer1());
+
             Intent intent = new Intent(GamesListActivity.this, MainActivity.class);
-            intent.putExtra("teamid", game.getId());
-            Log.d(TAG, "onClick: " + game.getId());
+            intent.putExtra("gameId", game.getId());
             startActivity(intent);
         }
     };
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,13 +64,8 @@ public class GamesListActivity extends AppCompatActivity {
 
         initDeleteSwitch();
         initNewGameButton();
-        if (autoLogout){
-            Logout();
-        }else{
-            RebindGames();
-        }
-
-
+        if (autoLogout) Logout();
+        else RebindGames();
         BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -113,8 +107,7 @@ public class GamesListActivity extends AppCompatActivity {
         });
     }
 
-    private void RebindGames() {
-        // Rebind the RecyclerView
+    void RebindGames() {
         Log.d(TAG, "RebindTeams: Start");
         gameList = findViewById(R.id.rvGames);
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
@@ -122,6 +115,7 @@ public class GamesListActivity extends AppCompatActivity {
         gamesAdapter = new GamesAdapter(games, this);
         gamesAdapter.setOnItemClickListener(onClickListener);
         gameList.setAdapter(gamesAdapter);
+
 
     }
     private void readFromAPI(){
@@ -161,17 +155,25 @@ public class GamesListActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         String gameName = editTextGameName.getText().toString().trim();
-                        String p2Name = "";
                         boolean playAgainstComputer = switchPlayComputer.isChecked();
                         String opponentName = playAgainstComputer ? "Computer" : "";
-                        Intent intent = new Intent(GamesListActivity.this, MainActivity.class);
-                        intent.putExtra("id", -1);
-                        intent.putExtra("gameName", gameName);
-                        intent.putExtra("opponentName", opponentName);
-                        Toast.makeText(GamesListActivity.this, "New game added: " + gameName + " against " + p2Name, Toast.LENGTH_SHORT).show();
-                        startActivity(intent);
+                        Game newGame = new Game();
+                        newGame.setPlayer1(player);
+                        newGame.setPlayer2(opponentName);
+                        newGame.setConnectionId(gameName);
+                        RestClient.execPostRequest(newGame,getString(R.string.gameTracker), GamesListActivity.this,  new VolleyCallback() {
+                            @Override
+                            public void onSuccess(ArrayList<Game> games) {
+                                Log.d(TAG, "New game created successfully");
+                                Intent intent = new Intent(GamesListActivity.this, MainActivity.class);
+                                intent.putExtra("gameName", gameName);
+                                intent.putExtra("opponentName", opponentName);
+                                startActivity(intent);
+                            }
+                        });
                     }
                 })
+
                 .setNegativeButton("Cancel", null);
 
         AlertDialog dialog = builder.create();

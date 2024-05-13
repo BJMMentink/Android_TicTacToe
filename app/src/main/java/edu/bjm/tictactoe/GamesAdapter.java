@@ -1,6 +1,7 @@
 package edu.bjm.tictactoe;
 
 import android.content.Context;
+import android.content.Intent;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,6 +13,7 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
@@ -35,20 +37,11 @@ public class GamesAdapter extends RecyclerView.Adapter {
     public class TeamViewHolder extends RecyclerView.ViewHolder{
         public TextView tvPlayer1;
         public TextView tvPlayer2;
-
+        public TextView tvName;
         private Button btnDelete;
         private CheckBox chkComplete;
         private View.OnClickListener onClickListener;
         private CompoundButton.OnCheckedChangeListener onCheckedChangeListener;
-
-        public TeamViewHolder(@NonNull View itemView) {
-            super(itemView);
-            tvPlayer1 = itemView.findViewById(R.id.tvPlayer1);
-            tvPlayer2 = itemView.findViewById(R.id.tvPlayer2);
-            chkComplete = itemView.findViewById(R.id.chkCompleted);
-            btnDelete = itemView.findViewById(R.id.btnDelete);
-        }
-
         public TextView getTvPlayer1()
         {
             return tvPlayer1;
@@ -57,8 +50,26 @@ public class GamesAdapter extends RecyclerView.Adapter {
         {
             return tvPlayer2;
         }
+        public TextView getTvName()
+        {
+            return tvName;
+        }
         public CheckBox getChlComplete() { return chkComplete; }
         public Button getBtnDelete() {return btnDelete; }
+
+        public TeamViewHolder(@NonNull View itemView) {
+            super(itemView);
+            tvPlayer1 = itemView.findViewById(R.id.tvPlayer1);
+            tvPlayer2 = itemView.findViewById(R.id.tvPlayer2);
+            tvName = itemView.findViewById(R.id.tvName);
+            chkComplete = itemView.findViewById(R.id.chkCompleted);
+            chkComplete.setTag(this);
+            btnDelete = itemView.findViewById(R.id.btnDelete);
+            itemView.setTag(this);
+            itemView.setOnClickListener(onItemClickListener);
+        }
+
+
     }
 
     public GamesAdapter(ArrayList<Game> data, Context context)
@@ -94,11 +105,8 @@ public class GamesAdapter extends RecyclerView.Adapter {
         TeamViewHolder teamViewHolder = (TeamViewHolder) holder;
         teamViewHolder.getTvPlayer1().setText(gameData.get(position).getPlayer1());
         teamViewHolder.getTvPlayer2().setText(gameData.get(position).getPlayer2());
-        if(gameData.get(position).getWinner() == null){
-            isCompleted = false;
-        }else{
-            isCompleted = true;
-        }
+        teamViewHolder.getTvName().setText(gameData.get(position).getConnectionId());
+        isCompleted = gameData.get(position).isCompleted();
         teamViewHolder.getChlComplete().setChecked(isCompleted);
 
         if(isDeleting)
@@ -112,6 +120,7 @@ public class GamesAdapter extends RecyclerView.Adapter {
                 deleteItem(position);
             }
         });
+
     }
 
     private void favoriteChanged(boolean isChecked) {
@@ -128,15 +137,13 @@ public class GamesAdapter extends RecyclerView.Adapter {
                 gameData.remove(game);
                 notifyDataSetChanged();
                 Log.d(TAG, "onSuccess: " + game.getId());
+
             }
         });
         Log.d(TAG, "deleteItem: parentContext: " + parentContext);
         Log.d(TAG, "deleteItem: " + game.toString());
-
-
-
+        ((GamesListActivity) parentContext).RebindGames();
     }
-
     @Override
     public int getItemCount() {
         return gameData.size();
